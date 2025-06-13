@@ -13,7 +13,7 @@ tagRoute.post("/submit", expressAsyncHandler(async (req, res) => {
     const currUser = await userModel.findOne({ email });
     if(!currUser){
         res.status(404).send({ msg: "User not found" })
-    }
+    } 
     // update the currUser 
     const newTag = {
         entity,
