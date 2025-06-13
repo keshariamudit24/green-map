@@ -3,7 +3,10 @@ const expressAsyncHandler = require('express-async-handler')
 const userRoute = express.Router();
 
 // define route handlers 
-userRoute.get("/get", expressAsyncHandler(async (req, res) => {
+
+// all tags
+// my tags
+userRoute.get("/get/all", expressAsyncHandler(async (req, res) => {
     res.status(200).send({ msg: "successfull" });
 }))
 
