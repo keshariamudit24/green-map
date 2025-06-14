@@ -14,7 +14,7 @@ function MyTags() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // For delete confirmation
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false);
   const [tagToDelete, setTagToDelete] = useState(null);
   
   // For file handling when editing
@@ -23,7 +23,6 @@ function MyTags() {
   
   // Add new state for confirmation modals
   const [isUpdateConfirmModalOpen, setIsUpdateConfirmModalOpen] = useState(false);
-  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false);
   const [tagToUpdate, setTagToUpdate] = useState(null);
   
   // Fetch user's tags when component mounts or user changes
@@ -49,10 +48,12 @@ function MyTags() {
       // The server returns { msg: "sending user tags", payload: user.tag }
       // where user.tag is the array of tag objects
       if (response.data?.payload && Array.isArray(response.data.payload)) {
-        // Each tag needs an id property for our UI operations
-        const tagsWithIds = response.data.payload.map((tag, index) => ({
+        // Make sure we properly handle MongoDB's _id field
+        const tagsWithIds = response.data.payload.map(tag => ({
           ...tag,
-          id: tag._id || tag.id || `temp-id-${index}` // Use existing ID or create temporary one
+          // Ensure both id and _id are available to avoid reference issues
+          id: tag._id.toString(),
+          _id: tag._id
         }));
         
         setTags(tagsWithIds);
@@ -132,61 +133,97 @@ function MyTags() {
         throw new Error('User email is not available');
       }
       
-      // Prepare the request data
+      // Prepare the request data - IMPORTANT: Add debugging to log ID format
+      console.log("Original tag ID type:", typeof tagToUpdate._id, "Value:", tagToUpdate._id);
+      console.log("String ID type:", typeof tagToUpdate.id, "Value:", tagToUpdate.id);
+      
+      // Use string ID consistently
+      const tagId = tagToUpdate.id.toString();
+      
       const updateData = {
         email: userEmail,
-        tagId: tagToUpdate.id,
-        confirmUpdate: true, // Confirmation flag
+        tagId: tagId,
+        confirmUpdate: true,
         entity: tagToUpdate.entity,
-        species: tagToUpdate.species,
-        age: tagToUpdate.age,
+        species: tagToUpdate.species || "",
+        age: tagToUpdate.age || 0,
         location: tagToUpdate.location,
         description: tagToUpdate.description,
       };
       
-      // Handle file upload if needed
-      if (selectedFile) {
-        const formData = new FormData();
+      console.log("Sending update with data:", JSON.stringify(updateData, null, 2));
+      
+      try {
+        // Handle file upload if needed
+        if (selectedFile) {
+          const formData = new FormData();
+          
+          // Add all update data to formData
+          Object.keys(updateData).forEach(key => {
+            formData.append(key, updateData[key]);
+          });
+          
+          formData.append('image', selectedFile);
+          
+          console.log("Sending multipart request with file");
+          const response = await axios.put('http://localhost:3000/user/update', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          console.log("Server response:", response.data);
+        } else {
+          // Regular JSON request for data-only updates
+          console.log("Sending JSON request without file");
+          const response = await axios.put('http://localhost:3000/user/update', updateData);
+          console.log("Server response:", response.data);
+        }
         
-        // Add all update data to formData
-        Object.keys(updateData).forEach(key => {
-          formData.append(key, updateData[key]);
-        });
+        // Close all modals and reset state
+        setIsUpdateConfirmModalOpen(false);
+        setIsEditModalOpen(false);
+        setCurrentTag(null);
+        setTagToUpdate(null);
+        setSelectedFile(null);
+        setPreviewURL('');
         
-        formData.append('image', selectedFile);
+        // Refresh tags from server to ensure consistency
+        fetchUserTags();
         
-        await axios.put('http://localhost:3000/user/update', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-      } else {
-        // Regular JSON request for data-only updates
-        await axios.put('http://localhost:3000/user/update', updateData);
+        // Add success alert
+        alert("Tag updated successfully!");
+        
+      } catch (axiosError) {
+        // This is a nested try/catch to better handle axios errors
+        console.error('Axios error details:', axiosError);
+        
+        if (axiosError.response) {
+          // The request was made and the server responded with a status code
+          console.error('Server Error Status:', axiosError.response.status);
+          console.error('Server Error Data:', axiosError.response.data);
+          console.error('Server Error Headers:', axiosError.response.headers);
+          
+          // Show more detailed error message
+          throw new Error(`Server error ${axiosError.response.status}: ${
+            axiosError.response.data.error || 
+            axiosError.response.data.message || 
+            'Unknown server error'
+          }`);
+        } else if (axiosError.request) {
+          // The request was made but no response was received
+          console.error('No response received:', axiosError.request);
+          throw new Error('No response received from server. Please check your connection.');
+        } else {
+          // Something happened in setting up the request
+          console.error('Error setting up request:', axiosError.message);
+          throw new Error(`Request setup failed: ${axiosError.message}`);
+        }
       }
-      
-      // Update the local state
-      setTags(prevTags => 
-        prevTags.map(tag => (tag.id === tagToUpdate.id ? tagToUpdate : tag))
-      );
-      
-      // Close all modals and reset state
-      setIsUpdateConfirmModalOpen(false);
-      setIsEditModalOpen(false);
-      setCurrentTag(null);
-      setTagToUpdate(null);
-      setSelectedFile(null);
-      setPreviewURL('');
-      
-      // Refresh tags from server to ensure consistency
-      fetchUserTags();
-      
-      // Show success toast or message
-      // (You could add a toast notification library here)
       
     } catch (err) {
       console.error('Error updating tag:', err);
-      alert(`Failed to update tag: ${err.response?.data?.error || err.message}`);
+      alert(`Failed to update tag: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -194,8 +231,17 @@ function MyTags() {
   
   // Open delete confirmation modal
   const handleDeleteClick = (tag) => {
+    console.log("Delete button clicked for tag:", tag);
     setTagToDelete(tag);
-    setIsDeleteConfirmModalOpen(true);
+    setIsDeleteConfirmModalOpen(true); // This should open the modal
+    
+    // Debug to check state was set
+    setTimeout(() => {
+      console.log("Modal state after click:", {
+        tagToDelete: tag,
+        isDeleteConfirmModalOpen: true
+      });
+    }, 100);
   };
   
   // Proceed with delete after confirmation
@@ -210,27 +256,55 @@ function MyTags() {
         throw new Error('User email is not available');
       }
       
+      // Use the correct ID field - MongoDB might be using _id instead of id
+      const tagId = tagToDelete._id || tagToDelete.id;
+      
+      console.log('Attempting to delete tag:', { 
+        tagId, 
+        email: userEmail, 
+        tag: tagToDelete 
+      });
+      
       // Send the delete request with required data
       await axios.delete('http://localhost:3000/user/delete', {
         data: {
           email: userEmail,
-          tagId: tagToDelete.id,
+          tagId: tagId,
           confirmDelete: true // Confirmation flag
         }
       });
       
+      console.log('Tag deleted successfully');
+      
       // Update local state to remove the deleted tag
-      setTags(prevTags => prevTags.filter(tag => tag.id !== tagToDelete.id));
+      setTags(prevTags => prevTags.filter(tag => {
+        // Handle both _id and id for maximum compatibility
+        const currentId = tag._id || tag.id;
+        const deleteId = tagToDelete._id || tagToDelete.id;
+        return currentId !== deleteId;
+      }));
       
       // Close modal
       setIsDeleteConfirmModalOpen(false);
       setTagToDelete(null);
       
-      // You could add a toast notification here
+      // Show success message
+      alert('Tag deleted successfully!');
       
     } catch (err) {
       console.error('Error deleting tag:', err);
+      
+      // Detailed error logging for debugging
+      if (err.response) {
+        console.error('Server response:', err.response.data);
+        console.error('Status code:', err.response.status);
+      }
+      
       alert(`Failed to delete tag: ${err.response?.data?.error || err.message}`);
+      
+      // Close modal even on error to avoid locking the UI
+      setIsDeleteConfirmModalOpen(false);
+      setTagToDelete(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -628,8 +702,8 @@ function MyTags() {
           </div>
         )}
         
-        {/* Delete Confirmation Modal */}
-        {isDeleteModalOpen && tagToDelete && (
+        {/* Delete Confirmation Modal - Make sure we're referencing the correct state */}
+        {isDeleteConfirmModalOpen && tagToDelete && (
           <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
               <div className="px-6 py-4 border-b border-gray-200">
@@ -637,17 +711,38 @@ function MyTags() {
               </div>
               
               <div className="p-6">
-                <div className="mb-4">
-                  <p className="text-sm text-gray-500">
-                    Are you sure you want to delete this tag? This action cannot be undone.
-                  </p>
+                <div className="flex items-center mb-4">
+                  <div className="bg-red-100 rounded-full p-2 mr-4">
+                    <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-gray-700 font-medium">
+                      Are you sure you want to delete this tag?
+                    </p>
+                    <p className="text-sm text-red-600 mt-1">
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Show which tag is being deleted */}
+                <div className="bg-gray-50 p-3 rounded-md mb-4">
+                  <p className="text-sm text-gray-600"><span className="font-medium">Type:</span> {tagToDelete.entity}</p>
+                  {tagToDelete.species && (
+                    <p className="text-sm text-gray-600"><span className="font-medium">Species:</span> {tagToDelete.species}</p>
+                  )}
+                  <p className="text-sm text-gray-600"><span className="font-medium">Location:</span> {tagToDelete.location}</p>
+                  <p className="text-sm text-gray-600 truncate"><span className="font-medium">Description:</span> {tagToDelete.description}</p>
                 </div>
                 
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
                     type="button"
                     onClick={() => {
-                      setIsDeleteModalOpen(false);
+                      console.log("Cancel delete clicked");
+                      setIsDeleteConfirmModalOpen(false);
                       setTagToDelete(null);
                     }}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none"
@@ -657,7 +752,10 @@ function MyTags() {
                   </button>
                   <button
                     type="button"
-                    onClick={proceedWithDelete}
+                    onClick={() => {
+                      console.log("Confirm delete clicked");
+                      proceedWithDelete();
+                    }}
                     className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
                   >

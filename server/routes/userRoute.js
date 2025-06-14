@@ -3,6 +3,20 @@ const express = require("express");
 const expressAsyncHandler = require('express-async-handler');
 const userModel = require("../schemas/userSchema");
 const userRoute = express.Router();
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Make sure this folder exists
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'image-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // define route handlers 
 
@@ -37,52 +51,68 @@ userRoute.get("/my-tags/:email", expressAsyncHandler(async (req, res) => {
 }))
 
 // update a tag
-userRoute.put('/update', expressAsyncHandler(async (req, res) => {
+userRoute.put('/update', upload.single('image'), expressAsyncHandler(async (req, res) => {
+  try {
     const { email, tagId, confirmUpdate, ...tagData } = req.body;
+    console.log("Request body:", req.body);
     
     // Check if email is provided
     if (!email) {
-        return res.status(401).send({ error: "Unauthorized: Email is required" });
+      return res.status(401).send({ error: "Unauthorized: Email is required" });
     }
     
     // Check if tag ID is provided
     if (!tagId) {
-        return res.status(400).send({ error: "Tag ID is required" });
+      return res.status(400).send({ error: "Tag ID is required" });
     }
     
     // Check for confirmation
     if (!confirmUpdate) {
-        return res.status(400).send({ error: "Update confirmation is required", requireConfirmation: true });
+      return res.status(400).send({ error: "Update confirmation is required", requireConfirmation: true });
     }
     
     const currUser = await userModel.findOne({ email });
     
     // Check if user exists
     if (!currUser) {
-        return res.status(404).send({ error: "User not found" });
+      return res.status(404).send({ error: "User not found" });
     }
     
-    // Find the tag to update
-    const tagIndex = currUser.tag.findIndex(tag => tag._id.toString() === tagId);
+    // Find the tag to update - Try both _id and id formats
+    // The ObjectId comparison might be failing, so let's use string comparison
+    const tagIndex = currUser.tag.findIndex(tag => 
+      tag._id.toString() === tagId.toString()
+    );
     
     if (tagIndex === -1) {
-        return res.status(404).send({ error: "Tag not found" });
+      return res.status(404).send({ error: "Tag not found" });
     }
+    
+    console.log("Found tag at index:", tagIndex);
     
     // Update the tag with new data, preserving fields not in the request
     Object.keys(tagData).forEach(key => {
-        if (tagData[key] !== undefined) {
-            currUser.tag[tagIndex][key] = tagData[key];
-        }
+      if (tagData[key] !== undefined) {
+        currUser.tag[tagIndex][key] = tagData[key];
+      }
     });
+    
+    // Handle image upload if provided
+    if (req.file) {
+      currUser.tag[tagIndex].imgUrl = `/uploads/${req.file.filename}`;
+    }
     
     // Save the updated user document
     await currUser.save();
     
     res.status(200).send({ 
-        msg: "Tag updated successfully", 
-        payload: currUser.tag[tagIndex] 
+      msg: "Tag updated successfully", 
+      payload: currUser.tag[tagIndex] 
     });
+  } catch (error) {
+    console.error("Error updating tag:", error);
+    res.status(500).send({ error: "Internal server error", details: error.message });
+  }
 }));
 
 // delete a tag 
