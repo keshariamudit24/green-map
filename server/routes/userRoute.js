@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const expressAsyncHandler = require('express-async-handler');
 const userModel = require("../schemas/userSchema");
@@ -7,23 +8,28 @@ const userRoute = express.Router();
 
 // all tags
 userRoute.get("/all-tags", expressAsyncHandler(async (req, res) => {
-    // get all users 
-    const users = userModel.find();
-    // get their tags and store them 
-    const allTags = users.findMap(user => user.tag);
+  const users = await userModel.find();
 
-    // return the tags 
-    res.status(200).send({ msg: "sending all tags", payload: allTags });
-})) 
+    const allTags = users.flatMap(user =>
+        user.tag.map(tag => ({
+            userTag: tag,
+            userFirstName: user.firstName
+        }))
+    );
+
+  console.log("✅ Cleaned tags sent:", allTags);
+  res.status(200).send({ msg: "sending all tags", payload: allTags });
+}));
 
 // my tags
-userRoute.get("/my-tags/", expressAsyncHandler(async (req, res) => {
-    const userId = req.auth
-    if (!userId) {
+userRoute.get("/my-tags/:email", expressAsyncHandler(async (req, res) => {
+    const { email } = req.params;
+    console.log("user email: ", email)
+    if (!email) {
         return res.status(401).send({ error: "Unauthorized" });
     }
 
-    const user = await userModel.findOne({ _id: userId });
+    const user = await userModel.findOne({ email });
     if (!user) {
         return res.status(404).send({ error: "User not found" });
     }

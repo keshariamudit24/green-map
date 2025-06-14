@@ -11,6 +11,7 @@ import CTASection from './components/CTASection'
 import Footer from './components/Footer'
 import AboutPage from './pages/AboutPage'
 import {CreateOrCheckUser} from './pages/CreateOrCheckUser'
+import CommunityTags from './pages/CommunityTags'
 
 // Get the Clerk publishable key from environment variables
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
@@ -39,6 +40,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/community-tags" element={<CommunityTags />} />
             {/* Add other routes as needed */}
           </Routes>
           <Footer />
