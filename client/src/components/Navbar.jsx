@@ -1,17 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useNavigate } from 'react-router-dom'
-import { useClerk, useUser } from '@clerk/clerk-react'
+import { useClerk, useUser, UserButton } from '@clerk/clerk-react'
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { openSignIn } = useClerk();
-  const { isSignedIn, user } = useUser();
-  const navigate = useNavigate();
+  const { isSignedIn } = useUser();
 
   const handleSignIn = () => {
     openSignIn({
-      redirectUrl: window.location.href, // Redirect back to current page after sign in
+      redirectUrl: window.location.href,
     });
   };
 
@@ -35,21 +33,13 @@ function Navbar() {
           <div className="flex items-center">
             {isSignedIn ? (
               <div className="hidden md:flex items-center space-x-4">
-                <div className="text-sm text-gray-700">
-                  Welcome, {user.firstName || 'User'}
-                </div>
-                <div className="relative">
-                  <button className="flex items-center space-x-2 focus:outline-none">
-                    <img 
-                      src={user.profileImageUrl} 
-                      alt="Profile" 
-                      className="h-8 w-8 rounded-full object-cover border-2 border-green-500" 
-                    />
-                    <svg className="h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                </div>
+                <Link to="/community-tags" className="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium">
+                  Community Tags
+                </Link>
+                <Link to="/mytags" className="text-gray-700 hover:text-green-600 px-3 py-2 rounded-md text-sm font-medium">
+                  My Tags
+                </Link>
+                <UserButton afterSignOutUrl="/" />
               </div>
             ) : (
               <button 
@@ -85,16 +75,19 @@ function Navbar() {
           <Link to="/about" className="text-gray-700 hover:text-green-600 block px-3 py-2 rounded-md text-base font-medium">About</Link>
           
           {isSignedIn ? (
-            <div className="mt-3 px-3 py-2 border-t border-gray-200 flex items-center">
-              <img 
-                src={user.profileImageUrl} 
-                alt="Profile" 
-                className="h-8 w-8 rounded-full object-cover border-2 border-green-500 mr-2" 
-              />
-              <div className="text-sm text-gray-700">
-                {user.firstName ? `${user.firstName} ${user.lastName || ''}` : 'My Account'}
+            <>
+              <div className="border-t border-gray-200 mt-2 pt-2">
+                <Link to="/community-tags" className="text-gray-700 hover:text-green-600 block px-3 py-2 rounded-md text-base font-medium">
+                  Community Tags
+                </Link>
+                <Link to="/mytags" className="text-gray-700 hover:text-green-600 block px-3 py-2 rounded-md text-base font-medium">
+                  My Tags
+                </Link>
+                <div className="px-3 py-2">
+                  <UserButton afterSignOutUrl="/" />
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <button 
               onClick={handleSignIn}

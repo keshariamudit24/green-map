@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 require('dotenv').config();
+const cors = require('cors')
 const app = express();
 const PORT = process.env.PORT
 const userRoute = require("./routes/userRoute")
@@ -8,6 +9,10 @@ const adminRoute = require("./routes/adminRoute")
 const tagRoute = require("./routes/tagRoute")
 const authRoute = require("./routes/authRoute")
 
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
 
 mongoose.connect(process.env.MONGODB_URL)
