@@ -48,10 +48,10 @@ const upload = multer({
 tagRoute.post('/add', upload.single('image'), expressAsyncHandler(async (req, res) => {
   try {
     // Get clerk user ID from auth
-    console.log(req.body)
-    const { email } = req.body
+    // console.log(req.body)
+    const { userEmail } = req.body
     // Find the user
-    const user = await userModel.findOne({ email });
+    const user = await userModel.findOne({ email: userEmail });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }

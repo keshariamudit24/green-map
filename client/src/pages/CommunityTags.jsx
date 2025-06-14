@@ -203,20 +203,20 @@ function CommunityTags() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tags.map((tag, index) => {
               // Optional: log outside of JSX
-              console.log("Rendering tag:", tag);
+              console.log("tag.imgUrl:", tag.imgUrl);
               return (
                 <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                   {tag.imgUrl && (
                     <div className="w-full h-48 overflow-hidden">
-                      <img
-                        src={tag.imgUrl}
-                        alt={tag.description || "Tag image"}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "https://via.placeholder.com/400x300?text=No+Image";
-                        }}
-                      />
+                        <img
+                            src={`http://localhost:3000${tag.imgUrl}`}
+                            alt={tag.description || "Tag image"}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://placehold.co/400x300?text=No+Image";
+                            }}
+                        />
                     </div>
                   )}
                   <div className="p-4">

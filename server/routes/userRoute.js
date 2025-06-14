@@ -17,7 +17,6 @@ userRoute.get("/all-tags", expressAsyncHandler(async (req, res) => {
         }))
     );
 
-  console.log("✅ Cleaned tags sent:", allTags);
   res.status(200).send({ msg: "sending all tags", payload: allTags });
 }));
 
