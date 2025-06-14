@@ -1,8 +1,19 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom' // Assuming you're using React Router
+import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useClerk, useUser } from '@clerk/clerk-react'
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { openSignIn } = useClerk();
+  const { isSignedIn, user } = useUser();
+  const navigate = useNavigate();
+
+  const handleSignIn = () => {
+    openSignIn({
+      redirectUrl: window.location.href, // Redirect back to current page after sign in
+    });
+  };
 
   return (
     <nav className="bg-white/90 backdrop-blur-sm fixed w-full z-10 shadow-sm">
@@ -22,7 +33,32 @@ function Navbar() {
             </div>
           </div>
           <div className="flex items-center">
-            <button className="hidden md:block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">Join Now</button>
+            {isSignedIn ? (
+              <div className="hidden md:flex items-center space-x-4">
+                <div className="text-sm text-gray-700">
+                  Welcome, {user.firstName || 'User'}
+                </div>
+                <div className="relative">
+                  <button className="flex items-center space-x-2 focus:outline-none">
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt="Profile" 
+                      className="h-8 w-8 rounded-full object-cover border-2 border-green-500" 
+                    />
+                    <svg className="h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button 
+                onClick={handleSignIn}
+                className="hidden md:block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+              >
+                Join Now
+              </button>
+            )}
             <div className="-mr-2 flex md:hidden">
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -47,7 +83,26 @@ function Navbar() {
           <Link to="/events" className="text-gray-700 hover:text-green-600 block px-3 py-2 rounded-md text-base font-medium">Events</Link>
           <Link to="/map" className="text-gray-700 hover:text-green-600 block px-3 py-2 rounded-md text-base font-medium">Map</Link>
           <Link to="/about" className="text-gray-700 hover:text-green-600 block px-3 py-2 rounded-md text-base font-medium">About</Link>
-          <button className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">Join Now</button>
+          
+          {isSignedIn ? (
+            <div className="mt-3 px-3 py-2 border-t border-gray-200 flex items-center">
+              <img 
+                src={user.profileImageUrl} 
+                alt="Profile" 
+                className="h-8 w-8 rounded-full object-cover border-2 border-green-500 mr-2" 
+              />
+              <div className="text-sm text-gray-700">
+                {user.firstName ? `${user.firstName} ${user.lastName || ''}` : 'My Account'}
+              </div>
+            </div>
+          ) : (
+            <button 
+              onClick={handleSignIn}
+              className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+            >
+              Join Now
+            </button>
+          )}
         </div>
       </div>
     </nav>
