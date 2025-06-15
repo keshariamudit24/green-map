@@ -5,7 +5,7 @@ const adminRoute = express.Router();
 
 // post an event 
 adminRoute.post('/event/post', expressAsyncHandler(async (req, res) => {
-
+    
 }))
 
 // export 
