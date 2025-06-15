@@ -13,6 +13,7 @@ import AboutPage from './pages/AboutPage'
 import {CreateOrCheckUser} from './pages/CreateOrCheckUser'
 import CommunityTags from './pages/CommunityTags'
 import MyTags from './pages/MyTags'
+import Maps from './pages/Maps'
 
 // Get the Clerk publishable key from environment variables
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
@@ -44,6 +45,7 @@ function App() {
             <Route path="/community-tags" element={<CommunityTags />} />
             <Route path="/mytags" element={<MyTags />} />
             <Route path="/events" element={<EventsSection />} />
+            <Route path="/map" element={<Maps />} />
             {/* Add other routes as needed */}
           </Routes>
           <Footer />
