@@ -2,9 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
+
 console.log("Is in iframe:", window.self !== window.top);
+
 function SignIn() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
@@ -26,34 +30,16 @@ function SignIn() {
     setError('');
     
     try {
-      const response = await axios.post('http://localhost:3000/admin/auth/signin', credentials, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
+      const response = await axios.post('http://localhost:3000/admin/auth/signin', credentials);
       
-      console.log('Login response:', response.data);
-      
-      if (response.status >= 200 && response.status < 300) {
-        // Store authentication state
-        localStorage.setItem('adminToken', 'authenticated');
-        toast.success("Signed in!");
-        console.log("Navigating to:", response.data.redirectUrl);
-        navigate(response.data.redirectUrl); 
-      } else {
-        toast.error(response.data.error || "Sign in failed");
+      if (response.status === 200) {
+        login('authenticated'); // You might want to use a real token from the backend
+        toast.success("Signed in successfully!");
+        navigate('/admin/events');
       }
-
     } catch (err) {
-      console.error('Sign in error:', err);
-      const errorMessage = err.response?.data?.error || 'Failed to sign in. Please check your credentials.';
-      setError(errorMessage);
-      
-      // Show toast notification for invalid credentials
-      if (err.response?.data?.showToast) {
-        toast.error(errorMessage);
-      }
+      toast.error(err.response?.data?.error || 'Failed to sign in');
+      setError(err.response?.data?.error || 'Authentication failed');
     } finally {
       setIsSubmitting(false);
     }

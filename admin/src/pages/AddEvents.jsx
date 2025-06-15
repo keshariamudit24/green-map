@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Navbar from '../components/Navbar';
 
 function AddEvents() {
   const navigate = useNavigate();
@@ -20,9 +21,6 @@ function AddEvents() {
     isVirtual: false
   });
 
-  const [eventImage, setEventImage] = useState(null);
-  const [previewURL, setPreviewURL] = useState('');
-  
   // Check if admin is logged in
   useEffect(() => {
     const checkAuth = () => {
@@ -45,23 +43,6 @@ function AddEvents() {
     });
   };
   
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setEventImage(file);
-      const fileURL = URL.createObjectURL(file);
-      setPreviewURL(fileURL);
-    }
-  };
-  
-  const clearImage = () => {
-    setEventImage(null);
-    if (previewURL) {
-      URL.revokeObjectURL(previewURL);
-      setPreviewURL('');
-    }
-  };
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -69,58 +50,19 @@ function AddEvents() {
     setErrorMessage('');
     
     try {
-      // Create form data to handle file upload
-      const formData = new FormData();
-      
-      // Add all event data to formData
-      Object.keys(eventData).forEach(key => {
-        formData.append(key, eventData[key]);
-      });
-      
-      // Add the file if one is selected
-      if (eventImage) {
-        formData.append('eventImage', eventImage);
-      }
-      
-      // In a real app, you would send this to your API
-      // For demo purposes, we'll just simulate a successful response
-      
-      // Simulate an API call
-      console.log('Submitting event data:', formData);
-      
-      // Uncomment and adjust this when you have your API ready
-      /*
-      const response = await axios.post('http://localhost:3000/admin/events', formData, {
+      // Directly send eventData instead of FormData
+      const response = await axios.post('http://localhost:3000/admin/event/post', eventData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Content-Type': 'application/json'
         }
       });
-      */
       
-      // For now, just simulate success
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Reset form 
-      setEventData({
-        title: '',
-        description: '',
-        date: '',
-        time: '',
-        location: '',
-        organizer: '',
-        maxParticipants: 50,
-        isVirtual: false
-      });
-      clearImage();
-      
-      // Show success message
       setSuccessMessage('Event added successfully!');
       
-      // Auto-dismiss success message
+      // Redirect to events page after successful addition
       setTimeout(() => {
-        setSuccessMessage('');
-      }, 5000);
+        navigate('/admin/events');
+      }, 2000);
       
     } catch (error) {
       console.error('Error adding event:', error);
@@ -145,33 +87,7 @@ function AddEvents() {
   
   return (
     <div className="min-h-screen bg-gray-100">
-      <header className="bg-green-700 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <img 
-                src="/admin-logo.png" 
-                alt="Green Map Admin" 
-                className="h-8 w-auto mr-3"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "/fallback-logo.svg";
-                }}
-              />
-              <h1 className="text-xl font-bold text-white">Green Map Admin</h1>
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="bg-green-800 hover:bg-green-900 text-white text-sm px-3 py-1 rounded flex items-center"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-              </svg>
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-md p-6">
@@ -342,49 +258,6 @@ function AddEvents() {
               ></textarea>
             </div>
             
-            {/* Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Event Image
-              </label>
-              <div className="mt-1 flex items-center">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-md file:border-0
-                    file:text-sm file:font-medium
-                    file:bg-green-50 file:text-green-700
-                    hover:file:bg-green-100"
-                />
-                {previewURL && (
-                  <button 
-                    type="button" 
-                    onClick={clearImage}
-                    className="ml-3 text-sm text-red-600 hover:text-red-800"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              
-              {/* Image preview */}
-              {previewURL && (
-                <div className="mt-2">
-                  <div className="relative w-40 h-40 rounded-md overflow-hidden">
-                    <img 
-                      src={previewURL} 
-                      alt="Event preview" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Preview</p>
-                </div>
-              )}
-            </div>
-            
             <div className="pt-4">
               <button
                 type="submit"
@@ -410,5 +283,4 @@ function AddEvents() {
     </div>
   );
 }
-
 export default AddEvents;

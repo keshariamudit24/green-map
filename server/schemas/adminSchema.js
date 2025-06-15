@@ -39,10 +39,6 @@ const adminSchema = new mongoose.Schema({
             isVirtual: {
                 type: Boolean,
                 default: false
-            },
-            eventImage: {
-                type: String,  // URL or path to stored image
-                required: false
             }
         }
     ]
