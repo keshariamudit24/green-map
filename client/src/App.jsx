@@ -14,6 +14,7 @@ import {CreateOrCheckUser} from './pages/CreateOrCheckUser'
 import CommunityTags from './pages/CommunityTags'
 import MyTags from './pages/MyTags'
 import Maps from './pages/Maps'
+import { ToastContainer } from 'react-toastify';
 
 // Get the Clerk publishable key from environment variables
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
@@ -33,6 +34,7 @@ function HomePage() {
 function App() {
   return (
     <ClerkProvider publishableKey={clerkPubKey}>
+      <ToastContainer />
       <Router>
         <div className="bg-gradient-to-b from-green-50 to-white min-h-screen">
           <Navbar />

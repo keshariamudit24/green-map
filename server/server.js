@@ -10,6 +10,7 @@ const userRoute = require("./routes/userRoute")
 const adminRoute = require("./routes/adminRoute")
 const tagRoute = require("./routes/tagRoute")
 const authRoute = require("./routes/authRoute")
+const markerRoute = require('./routes/markerRoute');
 
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:5174'],
@@ -28,3 +29,4 @@ app.use("/auth", authRoute); // store auth details in db
 app.use("/user", userRoute); // alltags, mytags
 app.use('/admin', adminRoute) // handle route 
 app.use("/tag", tagRoute); // post a tag
+app.use('/markers', markerRoute); 
