@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const mongoose = require("mongoose");
 require('dotenv').config();
@@ -11,7 +12,7 @@ const tagRoute = require("./routes/tagRoute")
 const authRoute = require("./routes/authRoute")
 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true
 }));
 app.use(express.json());

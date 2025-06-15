@@ -163,5 +163,8 @@ userRoute.delete('/delete', expressAsyncHandler(async (req, res) => {
     });
 }));
 
+// get all events 
+
+
 // export 
 module.exports = userRoute
