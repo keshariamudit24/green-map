@@ -43,6 +43,7 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/community-tags" element={<CommunityTags />} />
             <Route path="/mytags" element={<MyTags />} />
+            <Route path="/events" element={<EventsSection />} />
             {/* Add other routes as needed */}
           </Routes>
           <Footer />

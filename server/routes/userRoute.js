@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require("express");
 const expressAsyncHandler = require('express-async-handler');
 const userModel = require("../schemas/userSchema");
+const adminModel = require("../schemas/adminSchema");
 const userRoute = express.Router();
 const multer = require('multer');
 const path = require('path');
@@ -164,7 +165,11 @@ userRoute.delete('/delete', expressAsyncHandler(async (req, res) => {
 }));
 
 // get all events 
-
+userRoute.get('/events', expressAsyncHandler(async (req, res) => {
+  const adminObj = await adminModel.findOne();
+  const events = adminObj?.events || [];
+  res.status(200).send({ msg: "sending all events", payload: events });
+}))
 
 // export 
 module.exports = userRoute
